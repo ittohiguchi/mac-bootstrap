@@ -1,0 +1,12 @@
+.DS_Store
+
+# 公開リポジトリへローカル設定や認証情報を追加しない。
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.mobileprovision
+private/
+secrets/
