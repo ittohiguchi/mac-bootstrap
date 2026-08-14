@@ -1,0 +1,6 @@
+cask "google-chrome"
+cask "slack"
+cask "chatgpt"
+cask "tailscale-app"
+cask "docker-desktop"
+cask "iterm2"

@@ -20,14 +20,20 @@ trap cleanup EXIT
 mock_bin="$test_root/mock-bin"
 mkdir "$mock_bin"
 
-for command_name in defaults killall mkdir; do
+for command_name in brew curl defaults killall mkdir sh; do
   ln -s "$PWD/tests/mock_command.sh" "$mock_bin/$command_name"
 done
 
+/bin/mkdir -p "$test_root/home"
+printf 'existing zsh configuration\n' > "$test_root/home/.zshrc"
+
 CALLS_FILE="$calls_file" \
+BREW_BIN="$mock_bin/brew" \
+CURL_BIN="$mock_bin/curl" \
 DEFAULTS_BIN="$mock_bin/defaults" \
 KILLALL_BIN="$mock_bin/killall" \
 MKDIR_BIN="$mock_bin/mkdir" \
+SH_BIN="$mock_bin/sh" \
 HOME="$test_root/home" \
   ./apply.sh
 
@@ -39,6 +45,9 @@ assert_call() {
   fi
 }
 
+assert_call "brew <bundle> <--file=$PWD/Brewfile>"
+assert_call "curl <-fsSL> <https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh>"
+assert_call "sh <-c> <> <> <--unattended> <--keep-zshrc>"
 assert_call "defaults <write> <com.apple.dock> <autohide> <-bool> <true>"
 assert_call "defaults <write> <com.apple.dock> <tilesize> <-int> <69>"
 assert_call "defaults <write> <com.apple.dock> <mru-spaces> <-bool> <false>"
@@ -58,5 +67,28 @@ assert_call "defaults <write> <com.apple.symbolichotkeys> <AppleSymbolicHotKeys>
 assert_call "killall <Dock>"
 assert_call "killall <Finder>"
 assert_call "killall <SystemUIServer>"
+
+if [ "$(cat "$test_root/home/.zshrc")" != "existing zsh configuration" ]; then
+  printf 'existing .zshrc was changed\n' >&2
+  exit 1
+fi
+
+/bin/mkdir "$test_root/home/.oh-my-zsh"
+: > "$calls_file"
+
+CALLS_FILE="$calls_file" \
+BREW_BIN="$mock_bin/brew" \
+CURL_BIN="$mock_bin/curl" \
+DEFAULTS_BIN="$mock_bin/defaults" \
+KILLALL_BIN="$mock_bin/killall" \
+MKDIR_BIN="$mock_bin/mkdir" \
+SH_BIN="$mock_bin/sh" \
+HOME="$test_root/home" \
+  ./apply.sh
+
+if grep -Eq '^(curl|sh) ' "$calls_file"; then
+  printf 'Oh My Zsh installer ran for an existing installation\n' >&2
+  exit 1
+fi
 
 printf 'apply_test: ok\n'
