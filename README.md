@@ -2,7 +2,11 @@
 
 macOS のユーザー作成後に、開発環境を再現可能な形でセットアップするための bootstrap script を管理します。
 
-このリポジトリは public です。個人情報、認証情報、秘密鍵、端末固有の設定値はコミットしません。コミット前の検査には [gitleaks](https://github.com/gitleaks/gitleaks) と [pre-commit](https://pre-commit.com/) を使用します。
+## 設定の適用
+
+```sh
+./apply.sh
+```
 
 ## 開発準備
 
