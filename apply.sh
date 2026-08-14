@@ -6,8 +6,11 @@ set -eu
 
 CURL_BIN=${CURL_BIN:-/usr/bin/curl}
 DEFAULTS_BIN=${DEFAULTS_BIN:-/usr/bin/defaults}
+HIDUTIL_BIN=${HIDUTIL_BIN:-/usr/bin/hidutil}
 KILLALL_BIN=${KILLALL_BIN:-/usr/bin/killall}
 MKDIR_BIN=${MKDIR_BIN:-/bin/mkdir}
+OSASCRIPT_BIN=${OSASCRIPT_BIN:-/usr/bin/osascript}
+PLUTIL_BIN=${PLUTIL_BIN:-/usr/bin/plutil}
 SH_BIN=${SH_BIN:-/bin/sh}
 
 install_oh_my_zsh() {
@@ -22,18 +25,53 @@ install_oh_my_zsh() {
   "$SH_BIN" -c "$installer" "" --unattended --keep-zshrc
 }
 
-set_symbolic_hotkey() {
-  hotkey_id=$1
-  enabled=$2
-  parameters=$3
-
-  "$DEFAULTS_BIN" write com.apple.symbolichotkeys AppleSymbolicHotKeys \
-    -dict-add "$hotkey_id" \
-    "{ enabled = $enabled; value = { parameters = $parameters; type = standard; }; }"
-}
-
 restart_if_running() {
   "$KILLALL_BIN" "$1" 2>/dev/null || true
+}
+
+set_fast_key_repeat() {
+  # Persist the fastest values exposed by System Settings.
+  "$DEFAULTS_BIN" write NSGlobalDomain KeyRepeat -int 2
+  "$DEFAULTS_BIN" write NSGlobalDomain InitialKeyRepeat -int 15
+
+  # System Settings also updates the HID event system. Do the same so the
+  # change takes effect immediately instead of waiting for a new login.
+  "$OSASCRIPT_BIN" -l JavaScript -e '
+ObjC.import("IOKit");
+const handle = $.NXOpenEventStatus();
+if (Number(handle) === 0) {
+  throw new Error("NXOpenEventStatus failed");
+}
+try {
+  $.NXSetKeyRepeatInterval(handle, 2 / 60);
+  $.NXSetKeyRepeatThreshold(handle, 15 / 60);
+} finally {
+  $.NXCloseEventStatus(handle);
+}
+'
+}
+
+set_caps_lock_to_control() {
+  keyboard_services=$("$HIDUTIL_BIN" list --ndjson --matching keyboard)
+
+  printf '%s\n' "$keyboard_services" | while IFS= read -r keyboard; do
+    [ -n "$keyboard" ] || continue
+
+    service_type=$(printf '%s' "$keyboard" | "$PLUTIL_BIN" -extract type raw -)
+    [ "$service_type" = service ] || continue
+
+    vendor_id=$(printf '%s' "$keyboard" | "$PLUTIL_BIN" -extract VendorID raw -)
+    product_id=$(printf '%s' "$keyboard" | "$PLUTIL_BIN" -extract ProductID raw -)
+    mapping_key="com.apple.keyboard.modifiermapping.$vendor_id-$product_id-0"
+
+    # Persist the same per-keyboard ByHost preference used by System Settings.
+    "$DEFAULTS_BIN" -currentHost write NSGlobalDomain "$mapping_key" -array \
+      '{ HIDKeyboardModifierMappingSrc = 30064771129; HIDKeyboardModifierMappingDst = 30064771296; }'
+  done
+
+  # Apply the persisted mapping to the current HID session immediately.
+  "$HIDUTIL_BIN" property --set \
+    '{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x7000000E0}]}'
 }
 
 install_oh_my_zsh
@@ -55,9 +93,8 @@ install_oh_my_zsh
 "$DEFAULTS_BIN" -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 "$DEFAULTS_BIN" write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
-set_symbolic_hotkey 60 0 '(32, 49, 262144)'
-set_symbolic_hotkey 61 1 '(32, 49, 1048576)'
-set_symbolic_hotkey 64 1 '(32, 49, 524288)'
+set_fast_key_repeat
+set_caps_lock_to_control
 
 restart_if_running Dock
 restart_if_running Finder
