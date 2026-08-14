@@ -15,8 +15,8 @@ assert_cask() {
   fi
 }
 
-if [ "$(grep -c '^cask ' Brewfile)" -ne 6 ]; then
-  printf 'Brewfile must contain exactly six casks\n' >&2
+if [ "$(grep -c '^cask ' Brewfile)" -ne 8 ]; then
+  printf 'Brewfile must contain exactly eight casks\n' >&2
   exit 1
 fi
 
@@ -26,5 +26,7 @@ assert_cask chatgpt
 assert_cask tailscale-app
 assert_cask docker-desktop
 assert_cask iterm2
+assert_cask 1password
+assert_cask 1password-cli
 
 printf 'brewfile_test: ok\n'
