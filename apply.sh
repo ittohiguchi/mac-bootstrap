@@ -4,9 +4,35 @@ set -eu
 
 : "${HOME:?HOME must be set}"
 
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+
+BREW_BIN=${BREW_BIN:-}
+CURL_BIN=${CURL_BIN:-/usr/bin/curl}
 DEFAULTS_BIN=${DEFAULTS_BIN:-/usr/bin/defaults}
 KILLALL_BIN=${KILLALL_BIN:-/usr/bin/killall}
 MKDIR_BIN=${MKDIR_BIN:-/bin/mkdir}
+SH_BIN=${SH_BIN:-/bin/sh}
+
+if [ -z "$BREW_BIN" ]; then
+  BREW_BIN=$(command -v brew || true)
+fi
+
+if [ -z "$BREW_BIN" ]; then
+  printf 'Homebrew is required before running apply.sh.\n' >&2
+  exit 1
+fi
+
+install_oh_my_zsh() {
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    return
+  fi
+
+  installer=$(
+    "$CURL_BIN" -fsSL \
+      https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+  )
+  "$SH_BIN" -c "$installer" "" --unattended --keep-zshrc
+}
 
 set_symbolic_hotkey() {
   hotkey_id=$1
@@ -21,6 +47,9 @@ set_symbolic_hotkey() {
 restart_if_running() {
   "$KILLALL_BIN" "$1" 2>/dev/null || true
 }
+
+"$BREW_BIN" bundle --file="$SCRIPT_DIR/Brewfile"
+install_oh_my_zsh
 
 "$DEFAULTS_BIN" write com.apple.dock autohide -bool true
 "$DEFAULTS_BIN" write com.apple.dock tilesize -int 69
