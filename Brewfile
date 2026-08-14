@@ -1,3 +1,5 @@
+brew "gh"
+
 cask "google-chrome"
 cask "slack"
 cask "chatgpt"
