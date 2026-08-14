@@ -20,7 +20,7 @@ trap cleanup EXIT
 mock_bin="$test_root/mock-bin"
 mkdir "$mock_bin"
 
-for command_name in brew curl defaults killall mkdir sh; do
+for command_name in bash curl defaults killall mkdir sh; do
   ln -s "$PWD/tests/mock_command.sh" "$mock_bin/$command_name"
 done
 
@@ -28,7 +28,9 @@ done
 printf 'existing zsh configuration\n' > "$test_root/home/.zshrc"
 
 CALLS_FILE="$calls_file" \
-BREW_BIN="$mock_bin/brew" \
+BASH_BIN="$mock_bin/bash" \
+BREW_BIN="$test_root/missing-brew" \
+HOMEBREW_BREW_CANDIDATES="$test_root/missing-brew" \
 CURL_BIN="$mock_bin/curl" \
 DEFAULTS_BIN="$mock_bin/defaults" \
 KILLALL_BIN="$mock_bin/killall" \
@@ -45,7 +47,6 @@ assert_call() {
   fi
 }
 
-assert_call "brew <bundle> <--file=$PWD/Brewfile>"
 assert_call "curl <-fsSL> <https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh>"
 assert_call "sh <-c> <> <> <--unattended> <--keep-zshrc>"
 assert_call "defaults <write> <com.apple.dock> <autohide> <-bool> <true>"
@@ -68,6 +69,11 @@ assert_call "killall <Dock>"
 assert_call "killall <Finder>"
 assert_call "killall <SystemUIServer>"
 
+if grep -Eq '^(brew|bash) ' "$calls_file"; then
+  printf 'apply.sh must not manage Homebrew\n' >&2
+  exit 1
+fi
+
 if [ "$(cat "$test_root/home/.zshrc")" != "existing zsh configuration" ]; then
   printf 'existing .zshrc was changed\n' >&2
   exit 1
@@ -77,7 +83,9 @@ fi
 : > "$calls_file"
 
 CALLS_FILE="$calls_file" \
-BREW_BIN="$mock_bin/brew" \
+BASH_BIN="$mock_bin/bash" \
+BREW_BIN="$test_root/missing-brew" \
+HOMEBREW_BREW_CANDIDATES="$test_root/missing-brew" \
 CURL_BIN="$mock_bin/curl" \
 DEFAULTS_BIN="$mock_bin/defaults" \
 KILLALL_BIN="$mock_bin/killall" \
