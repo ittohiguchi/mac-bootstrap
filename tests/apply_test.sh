@@ -20,7 +20,7 @@ trap cleanup EXIT
 mock_bin="$test_root/mock-bin"
 mkdir "$mock_bin"
 
-for command_name in bash curl defaults killall mkdir sh; do
+for command_name in bash curl defaults hidutil killall mkdir osascript sh; do
   ln -s "$PWD/tests/mock_command.sh" "$mock_bin/$command_name"
 done
 
@@ -33,8 +33,10 @@ BREW_BIN="$test_root/missing-brew" \
 HOMEBREW_BREW_CANDIDATES="$test_root/missing-brew" \
 CURL_BIN="$mock_bin/curl" \
 DEFAULTS_BIN="$mock_bin/defaults" \
+HIDUTIL_BIN="$mock_bin/hidutil" \
 KILLALL_BIN="$mock_bin/killall" \
 MKDIR_BIN="$mock_bin/mkdir" \
+OSASCRIPT_BIN="$mock_bin/osascript" \
 SH_BIN="$mock_bin/sh" \
 HOME="$test_root/home" \
   ./apply.sh
@@ -62,9 +64,18 @@ assert_call "defaults <write> <com.apple.AppleMultitouchTrackpad> <FirstClickThr
 assert_call "defaults <write> <com.apple.AppleMultitouchTrackpad> <SecondClickThreshold> <-int> <0>"
 assert_call "defaults <-currentHost> <write> <NSGlobalDomain> <com.apple.mouse.tapBehavior> <-int> <1>"
 assert_call "defaults <write> <NSGlobalDomain> <com.apple.mouse.tapBehavior> <-int> <1>"
-assert_call "defaults <write> <com.apple.symbolichotkeys> <AppleSymbolicHotKeys> <-dict-add> <60> <{ enabled = 0; value = { parameters = (32, 49, 262144); type = standard; }; }>"
-assert_call "defaults <write> <com.apple.symbolichotkeys> <AppleSymbolicHotKeys> <-dict-add> <61> <{ enabled = 1; value = { parameters = (32, 49, 1048576); type = standard; }; }>"
-assert_call "defaults <write> <com.apple.symbolichotkeys> <AppleSymbolicHotKeys> <-dict-add> <64> <{ enabled = 1; value = { parameters = (32, 49, 524288); type = standard; }; }>"
+assert_call "defaults <write> <NSGlobalDomain> <KeyRepeat> <-int> <2>"
+assert_call "defaults <write> <NSGlobalDomain> <InitialKeyRepeat> <-int> <15>"
+if ! grep -Fq 'osascript <-l> <JavaScript> <-e>' "$calls_file" ||
+  ! grep -Fq 'NXSetKeyRepeatInterval(handle, 2 / 60)' "$calls_file" ||
+  ! grep -Fq 'NXSetKeyRepeatThreshold(handle, 15 / 60)' "$calls_file"; then
+  printf 'missing immediate key repeat update\n' >&2
+  exit 1
+fi
+assert_call "hidutil <list> <--ndjson> <--matching> <keyboard>"
+assert_call "defaults <-currentHost> <write> <NSGlobalDomain> <com.apple.keyboard.modifiermapping.0-0-0> <-array> <{ HIDKeyboardModifierMappingSrc = 30064771129; HIDKeyboardModifierMappingDst = 30064771296; }>"
+assert_call "defaults <-currentHost> <write> <NSGlobalDomain> <com.apple.keyboard.modifiermapping.1278-33-0> <-array> <{ HIDKeyboardModifierMappingSrc = 30064771129; HIDKeyboardModifierMappingDst = 30064771296; }>"
+assert_call 'hidutil <property> <--set> <{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x7000000E0}]}>'
 assert_call "killall <Dock>"
 assert_call "killall <Finder>"
 assert_call "killall <SystemUIServer>"
@@ -88,8 +99,10 @@ BREW_BIN="$test_root/missing-brew" \
 HOMEBREW_BREW_CANDIDATES="$test_root/missing-brew" \
 CURL_BIN="$mock_bin/curl" \
 DEFAULTS_BIN="$mock_bin/defaults" \
+HIDUTIL_BIN="$mock_bin/hidutil" \
 KILLALL_BIN="$mock_bin/killall" \
 MKDIR_BIN="$mock_bin/mkdir" \
+OSASCRIPT_BIN="$mock_bin/osascript" \
 SH_BIN="$mock_bin/sh" \
 HOME="$test_root/home" \
   ./apply.sh
