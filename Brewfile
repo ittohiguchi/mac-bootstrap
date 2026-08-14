@@ -1,6 +1,10 @@
+brew "gh"
+
 cask "google-chrome"
 cask "slack"
 cask "chatgpt"
 cask "tailscale-app"
 cask "docker-desktop"
 cask "iterm2"
+cask "1password"
+cask "1password-cli"

@@ -2,9 +2,41 @@
 
 macOS のユーザー作成後に、開発環境を再現可能な形でセットアップするための bootstrap script を管理します。
 
-## 設定の適用
+## マシン単位のセットアップ
 
-次のコマンドは、Homebrew、`Brewfile`に定義したアプリ、Oh My Zshをインストールし、macOS設定を適用します。Homebrewの初回インストールでは、管理者パスワードや確認入力を求められる場合があります。アプリの初回起動、ログイン、権限付与は行いません。既存の`~/.zprofile`と`~/.zshrc`は保持します。
+Homebrewの所有者がMacごとに1回だけ実行します。Homebrewが未導入の場合は、[公式のインストーラー](https://docs.brew.sh/Installation)を実行します。
+
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+続けて、リポジトリのルートでアプリとCLIをインストールします。
+
+```sh
+brew bundle --file ./Brewfile
+```
+
+`Brewfile`でインストールするアプリは`/Applications`に配置され、Macのユーザー間で共有されます。アプリの初回起動、ログイン、権限付与は各ユーザーが行います。
+
+## ユーザー単位のセットアップ
+
+各OSユーザーは、Macに対応するHomebrewの設定を`~/.zprofile`に追加します。
+
+Apple Siliconの場合:
+
+```sh
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+```
+
+Intel Macの場合:
+
+```sh
+echo 'eval "$(/usr/local/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/usr/local/bin/brew shellenv)"
+```
+
+その後、ユーザーごとのOh My ZshとmacOS設定を適用します。`apply.sh`はHomebrewのインストール、更新、所有権変更、`Brewfile`の適用を行いません。既存の`~/.zshrc`は保持します。
 
 ```sh
 ./apply.sh
