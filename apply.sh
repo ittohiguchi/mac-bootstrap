@@ -96,19 +96,24 @@ install_oh_my_zsh
 "$DEFAULTS_BIN" write com.apple.HIToolbox AppleGlobalTextInputProperties \
   -dict-add TextInputGlobalPropertyPerContextInput -bool true
 "$DEFAULTS_BIN" write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
-"$DEFAULTS_BIN" write com.apple.inputmethod.Kotoeri \
-  JIMPrefFullWidthNumeralCharactersKey -bool false
 
-# Implementation: 日本語入力は設定をプロセス内に保持するため、設定画面と同じ分散通知で再読込させる。
+# Implementation: defaultsでは起動中のIMEが更新されないため、設定画面と同じsetterを使う。
 "$OSASCRIPT_BIN" -l JavaScript -e '
 ObjC.import("Foundation");
-$.NSDistributedNotificationCenter.defaultCenter
-  .postNotificationNameObjectUserInfoDeliverImmediately(
-    "com.apple.inputmethod.JIM.PreferencesDidChangeNotification",
-    "com.apple.JIMPreferences",
-    null,
-    true
-  );
+const framework = $.NSBundle.bundleWithPath(
+  "/System/Library/PrivateFrameworks/CoreJapaneseEngine.framework"
+);
+if (!framework.load) {
+  throw new Error("CoreJapaneseEngine failed to load");
+}
+const preferencesClass = $.NSClassFromString("JIMPreferences");
+if (!preferencesClass) {
+  throw new Error("JIMPreferences is unavailable");
+}
+preferencesClass.sharedPreferences.setBoolForKey(
+  false,
+  "JIMPrefFullWidthNumeralCharactersKey"
+);
 '
 
 set_fast_key_repeat

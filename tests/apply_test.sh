@@ -68,10 +68,10 @@ assert_call "defaults <write> <NSGlobalDomain> <KeyRepeat> <-int> <2>"
 assert_call "defaults <write> <NSGlobalDomain> <InitialKeyRepeat> <-int> <15>"
 assert_call "defaults <write> <com.apple.HIToolbox> <AppleGlobalTextInputProperties> <-dict-add> <TextInputGlobalPropertyPerContextInput> <-bool> <true>"
 assert_call "defaults <write> <NSGlobalDomain> <NSAutomaticPeriodSubstitutionEnabled> <-bool> <false>"
-assert_call "defaults <write> <com.apple.inputmethod.Kotoeri> <JIMPrefFullWidthNumeralCharactersKey> <-bool> <false>"
-if ! grep -Fq 'com.apple.inputmethod.JIM.PreferencesDidChangeNotification' "$calls_file" ||
-  ! grep -Fq 'com.apple.JIMPreferences' "$calls_file" ||
-  ! grep -Fq 'postNotificationNameObjectUserInfoDeliverImmediately' "$calls_file"; then
+if ! grep -Fq '/System/Library/PrivateFrameworks/CoreJapaneseEngine.framework' "$calls_file" ||
+  ! grep -Fq 'NSClassFromString("JIMPreferences")' "$calls_file" ||
+  ! grep -Fq 'sharedPreferences.setBoolForKey(' "$calls_file" ||
+  ! grep -Fq 'JIMPrefFullWidthNumeralCharactersKey' "$calls_file"; then
   printf 'missing immediate Japanese input preference update\n' >&2
   exit 1
 fi
