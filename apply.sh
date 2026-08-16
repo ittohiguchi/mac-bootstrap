@@ -93,6 +93,12 @@ install_oh_my_zsh
 "$DEFAULTS_BIN" -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 "$DEFAULTS_BIN" write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
+"$DEFAULTS_BIN" write com.apple.HIToolbox AppleGlobalTextInputProperties \
+  -dict-add TextInputGlobalPropertyPerContextInput -bool true
+"$DEFAULTS_BIN" write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+"$DEFAULTS_BIN" write com.apple.inputmethod.Kotoeri \
+  JIMPrefFullWidthNumeralCharactersKey -bool false
+
 set_fast_key_repeat
 set_caps_lock_to_control
 

@@ -66,6 +66,9 @@ assert_call "defaults <-currentHost> <write> <NSGlobalDomain> <com.apple.mouse.t
 assert_call "defaults <write> <NSGlobalDomain> <com.apple.mouse.tapBehavior> <-int> <1>"
 assert_call "defaults <write> <NSGlobalDomain> <KeyRepeat> <-int> <2>"
 assert_call "defaults <write> <NSGlobalDomain> <InitialKeyRepeat> <-int> <15>"
+assert_call "defaults <write> <com.apple.HIToolbox> <AppleGlobalTextInputProperties> <-dict-add> <TextInputGlobalPropertyPerContextInput> <-bool> <true>"
+assert_call "defaults <write> <NSGlobalDomain> <NSAutomaticPeriodSubstitutionEnabled> <-bool> <false>"
+assert_call "defaults <write> <com.apple.inputmethod.Kotoeri> <JIMPrefFullWidthNumeralCharactersKey> <-bool> <false>"
 if ! grep -Fq 'osascript <-l> <JavaScript> <-e>' "$calls_file" ||
   ! grep -Fq 'NXSetKeyRepeatInterval(handle, 2 / 60)' "$calls_file" ||
   ! grep -Fq 'NXSetKeyRepeatThreshold(handle, 15 / 60)' "$calls_file"; then
