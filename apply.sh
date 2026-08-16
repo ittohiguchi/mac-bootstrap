@@ -99,6 +99,18 @@ install_oh_my_zsh
 "$DEFAULTS_BIN" write com.apple.inputmethod.Kotoeri \
   JIMPrefFullWidthNumeralCharactersKey -bool false
 
+# Implementation: 日本語入力は設定をプロセス内に保持するため、設定画面と同じ分散通知で再読込させる。
+"$OSASCRIPT_BIN" -l JavaScript -e '
+ObjC.import("Foundation");
+$.NSDistributedNotificationCenter.defaultCenter
+  .postNotificationNameObjectUserInfoDeliverImmediately(
+    "com.apple.inputmethod.JIM.PreferencesDidChangeNotification",
+    "com.apple.JIMPreferences",
+    null,
+    true
+  );
+'
+
 set_fast_key_repeat
 set_caps_lock_to_control
 

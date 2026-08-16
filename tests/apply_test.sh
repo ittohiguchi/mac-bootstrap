@@ -69,6 +69,12 @@ assert_call "defaults <write> <NSGlobalDomain> <InitialKeyRepeat> <-int> <15>"
 assert_call "defaults <write> <com.apple.HIToolbox> <AppleGlobalTextInputProperties> <-dict-add> <TextInputGlobalPropertyPerContextInput> <-bool> <true>"
 assert_call "defaults <write> <NSGlobalDomain> <NSAutomaticPeriodSubstitutionEnabled> <-bool> <false>"
 assert_call "defaults <write> <com.apple.inputmethod.Kotoeri> <JIMPrefFullWidthNumeralCharactersKey> <-bool> <false>"
+if ! grep -Fq 'com.apple.inputmethod.JIM.PreferencesDidChangeNotification' "$calls_file" ||
+  ! grep -Fq 'com.apple.JIMPreferences' "$calls_file" ||
+  ! grep -Fq 'postNotificationNameObjectUserInfoDeliverImmediately' "$calls_file"; then
+  printf 'missing immediate Japanese input preference update\n' >&2
+  exit 1
+fi
 if ! grep -Fq 'osascript <-l> <JavaScript> <-e>' "$calls_file" ||
   ! grep -Fq 'NXSetKeyRepeatInterval(handle, 2 / 60)' "$calls_file" ||
   ! grep -Fq 'NXSetKeyRepeatThreshold(handle, 15 / 60)' "$calls_file"; then
